@@ -17,13 +17,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* BASE STYLES */
+        /* BASE STYLES & OPTIMIZATION */
         body { font-family: 'Outfit', sans-serif; overflow-x: hidden; background-color: #0f172a; -webkit-tap-highlight-color: transparent; }
         [x-cloak] { display: none !important; }
         
-        /* Glassmorphism */
-        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
-        .glass-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.18); }
+        /* Optimized Glassmorphism (Kurangi blur di HP biar ringan) */
+        .glass { background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
+        .glass-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        @media (min-width: 768px) {
+            .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+            .glass-card { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        }
         
         .h1-gradient { background: linear-gradient(to right, #818cf8, #e879f9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         
@@ -31,7 +36,9 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
 
-        /* --- LOADING SCREEN ANIMATION (MONEY DROP) --- */
+        /* ANIMATIONS (Hardware Accelerated) */
+        .animate-gpu { transform: translateZ(0); will-change: transform; }
+
         @keyframes money-drop {
             0% { transform: translateX(-50%) translateY(-35px) scale(0.8) rotate(-10deg); opacity: 0; }
             20% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1) rotate(0deg); }
@@ -48,22 +55,10 @@
         .loader-bar::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #10b981, #06b6d4); animation: loading-progress 2s ease-in-out forwards; }
         @keyframes loading-progress { 0% { width: 0%; } 100% { width: 100%; } }
 
-        /* --- PLANT GROWTH ANIMATION (NEW) --- */
-        @keyframes plant-grow {
-            0% { transform: scale(0) translateY(10px); opacity: 0; }
-            60% { transform: scale(1.2) translateY(-2px); opacity: 1; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        @keyframes plant-sway {
-            0%, 100% { transform: rotate(-5deg); }
-            50% { transform: rotate(5deg); }
-        }
-        .growing-plant {
-            display: inline-block;
-            animation: plant-grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
-                       plant-sway 3s ease-in-out infinite 0.8s; /* Sway starts after grow */
-            transform-origin: bottom center;
-        }
+        /* PLANT GROWTH */
+        @keyframes plant-grow { 0% { transform: scale(0) translateY(10px); opacity: 0; } 60% { transform: scale(1.2) translateY(-2px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        @keyframes plant-sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+        .growing-plant { display: inline-block; animation: plant-grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, plant-sway 3s ease-in-out infinite 0.8s; transform-origin: bottom center; }
 
         /* SKINS ID CARD */
         .skin-basic { background: #1e293b; border: 2px solid rgba(255,255,255,0.1); }
@@ -92,7 +87,7 @@
     <div x-data="appData()" x-init="initApp()" class="min-h-screen">
 
         <div x-show="isLoading" x-transition.opacity.duration.1000ms class="fixed inset-0 z-[999] bg-[#0f172a] flex flex-col items-center justify-center p-4">
-            <div class="relative w-32 h-32 mb-8 flex items-center justify-center">
+            <div class="relative w-32 h-32 mb-8 flex items-center justify-center animate-gpu">
                 <i class="fas fa-money-bill-wave text-emerald-400 text-4xl animate-money"></i>
                 <div class="relative z-10 bg-[#0f172a] rounded-full p-2">
                     <i class="fas fa-wallet text-6xl text-indigo-500 animate-wallet"></i>
@@ -156,7 +151,7 @@
             <svg id="lanyard-svg"><line id="lanyard-line-shadow" stroke="rgba(0,0,0,0.5)" stroke-width="8"/><line id="lanyard-line" stroke="url(#g)" stroke-width="6"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#374151"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs></svg>
             <div id="id-card-wrapper"><div id="id-card-container">
                 <div class="w-16 h-8 bg-gray-400 mx-auto -mt-4 rounded flex items-center justify-center shadow-lg border-b-2 border-gray-600 relative z-20 no-pointer"><div class="text-[8px] text-gray-800 font-bold tracking-widest">SECURE</div></div>
-                <div :class="`tilt-card ${currentSkin} w-full h-full rounded-3xl shadow-2xl relative overflow-hidden flex flex-col items-center text-center -mt-2`">
+                <div :class="`tilt-card ${currentSkin} w-full h-full rounded-3xl shadow-2xl relative overflow-hidden flex flex-col items-center text-center -mt-2 animate-gpu`">
                     <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay no-pointer"></div>
                     <div class="absolute top-0 w-full h-40 bg-gradient-to-b from-white/10 to-transparent no-pointer"></div>
                     <div class="w-28 h-28 rounded-full bg-black/30 border-4 border-white/20 flex items-center justify-center shadow-xl relative z-10 mt-10 mb-4 no-pointer backdrop-blur-sm"><i class="fas fa-user-secret text-6xl text-white/80"></i></div>
@@ -189,7 +184,7 @@
                 </div>
                 
                 <template x-if="target">
-                    <div :class="`glass px-4 md:px-6 py-3 rounded-2xl flex items-center gap-4 border-l-4 border-${badgeColor}-500 w-full md:w-auto justify-between md:justify-end`">
+                    <div :class="`glass px-4 md:px-6 py-3 rounded-2xl flex items-center gap-4 border-l-4 border-${badgeColor}-500 w-full md:w-auto justify-between md:justify-end animate-gpu`">
                         <div class="text-right">
                             <p class="text-[10px] uppercase text-gray-400">Status Tanaman</p>
                             <p :class="`text-lg md:text-xl font-bold text-${badgeColor}-400`" x-text="currentLevel"></p>
@@ -211,7 +206,6 @@
                                 <div class="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
                             </div>
                         </template>
-
                         <div x-show="!target || !target.image" class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-600/10 to-purple-600/10 rounded-full blur-[80px] -z-10"></div>
                         
                         <div class="relative z-10">
@@ -289,19 +283,7 @@
                          <div class="space-y-4">
                             <div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1">Nama Barang</label><input type="text" x-model="newTargetName" placeholder="Misal: iPhone 15" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-purple-500 text-white"></div>
                             <div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1">Harga (Rp)</label><div class="relative"><span class="absolute left-4 top-2.5 text-gray-500 text-xs font-bold">Rp</span><input type="text" x-model="newTargetAmount" @input="formatInput($event)" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono focus:border-purple-500 text-white"></div></div>
-                            
-                            <div>
-                                <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1 flex justify-between"><span>Foto Barang</span> <span class="text-purple-400 text-[9px] italic">JPG, PNG (Max 500KB)</span></label>
-                                <input type="file" @change="handleImageUpload($event)" accept="image/*" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-2 py-2 text-xs text-gray-300">
-                                
-                                <template x-if="newTargetImage">
-                                    <div class="mt-2 w-full h-32 rounded-lg overflow-hidden border border-gray-700 relative">
-                                        <img :src="newTargetImage" class="w-full h-full object-cover">
-                                        <button @click="newTargetImage = ''; document.querySelector('input[type=file]').value = '';" class="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
-                                    </div>
-                                </template>
-                            </div>
-
+                            <div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1 flex justify-between"><span>Foto Barang</span> <span class="text-purple-400 text-[9px] italic">JPG, PNG (Max 500KB)</span></label><input type="file" @change="handleImageUpload($event)" accept="image/*" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-2 py-2 text-xs text-gray-300"><template x-if="newTargetImage"><div class="mt-2 w-full h-32 rounded-lg overflow-hidden border border-gray-700 relative"><img :src="newTargetImage" class="w-full h-full object-cover"><button @click="newTargetImage = ''; document.querySelector('input[type=file]').value = '';" class="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs"><i class="fas fa-times"></i></button></div></template></div>
                             <div class="p-4 bg-purple-900/20 rounded-2xl border border-purple-500/20 mt-2"><label class="text-[10px] uppercase text-purple-300 font-bold mb-2 block">Komitmen Rutin</label><div class="flex gap-2"><div class="relative w-2/3"><span class="absolute left-3 top-2.5 text-purple-300/50 text-xs font-bold">Rp</span><input type="text" x-model="newTargetPlan" @input="formatInput($event)" class="w-full bg-gray-900/80 border border-purple-500/30 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none font-mono text-white"></div><select x-model="newTargetFreq" class="w-1/3 bg-gray-900/80 border border-purple-500/30 rounded-xl px-2 py-2.5 text-xs outline-none text-white"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option></select></div></div>
                             <button @click="saveTarget()" class="w-full bg-gray-800 hover:bg-purple-600 text-white py-3 rounded-xl text-sm font-bold transition mt-4 shadow-lg"><i class="fas fa-lock mr-2"></i>Kunci Target</button>
                          </div>
@@ -322,9 +304,7 @@
                     <button @click="changeName(); open=false" class="bg-gray-700 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">Ganti Nama <i class="fas fa-pencil-alt"></i></button>
                     <button @click="showArchive=true; open=false" class="bg-yellow-600 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">Riwayat <i class="fas fa-archive"></i></button>
                 </div>
-                <button @click="open = !open" class="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl border-2 border-indigo-400 transform transition active:scale-90">
-                    <i class="fas" :class="open ? 'fa-times' : 'fa-bars'"></i>
-                </button>
+                <button @click="open = !open" class="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl border-2 border-indigo-400 transform transition active:scale-90"><i class="fas" :class="open ? 'fa-times' : 'fa-bars'"></i></button>
             </div>
         </div>
     </div>
@@ -343,18 +323,7 @@
                 get totalSaved() { return this.transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0); },
                 get percentage() { if(!this.target || this.target.amount <= 0) return 0; return Math.min(100, (this.totalSaved / this.target.amount) * 100).toFixed(1); },
                 get currentLevel() { const p = parseFloat(this.percentage); if(p >= 100) return 'Panen Raya'; if(p >= 75) return 'Mekar Indah'; if(p >= 50) return 'Kuncup Bunga'; if(p >= 25) return 'Tanaman Pot'; if(p >= 10) return 'Tunas Muda'; return 'Benih Baru'; },
-                
-                // EVOLUSI TANAMAN BERDASARKAN PERSENTASE
-                get levelIcon() {
-                    const p = parseFloat(this.percentage);
-                    if(p >= 100) return '🌻'; // Panen/Mekar Sempurna
-                    if(p >= 75) return '🌺';  // Mekar Indah
-                    if(p >= 50) return '🌷';  // Kuncup Bunga
-                    if(p >= 25) return '🪴';  // Tanaman Pot
-                    if(p >= 10) return '🌿';  // Daun Tumbuh
-                    return '🌱';              // Benih
-                },
-
+                get levelIcon() { const p = parseFloat(this.percentage); if(p >= 100) return '🌻'; if(p >= 75) return '🌺'; if(p >= 50) return '🌷'; if(p >= 25) return '🪴'; if(p >= 10) return '🌿'; return '🌱'; },
                 get currentSkin() { const p = parseFloat(this.percentage); if(p >= 100) return 'skin-sultan'; if(p >= 75) return 'skin-royal'; if(p >= 50) return 'skin-luxury'; if(p >= 25) return 'skin-carbon'; if(p >= 10) return 'skin-tech'; return 'skin-basic'; },
                 get rankCode() { const p = parseFloat(this.percentage); if(p >= 100) return 'MAX'; if(p >= 75) return 'ELT'; if(p >= 50) return 'PRO'; if(p >= 25) return 'ADV'; if(p >= 10) return 'INT'; return 'NOV'; },
                 get badgeColor() { const p = parseFloat(this.percentage); if(p >= 100) return 'yellow'; if(p >= 75) return 'pink'; if(p >= 50) return 'purple'; if(p >= 25) return 'indigo'; if(p >= 10) return 'blue'; return 'gray'; },
@@ -364,9 +333,7 @@
                     if(this.totalSaved >= this.target.amount) return '🎉 SELAMAT! Target tercapai!';
                     const remaining = this.target.amount - this.totalSaved;
                     let dailyRate = 0, label = '';
-                    if(this.target.freq == 'daily') { dailyRate = this.target.plan; label = 'hari'; }
-                    else if(this.target.freq == 'weekly') { dailyRate = this.target.plan/7; label = 'minggu'; }
-                    else { dailyRate = this.target.plan/30; label = 'bulan'; }
+                    if(this.target.freq == 'daily') { dailyRate = this.target.plan; label = 'hari'; } else if(this.target.freq == 'weekly') { dailyRate = this.target.plan/7; label = 'minggu'; } else { dailyRate = this.target.plan/30; label = 'bulan'; }
                     if(dailyRate <= 0) return 'Mulai menabung untuk melihat prediksi.';
                     const daysLeft = Math.ceil(remaining / dailyRate);
                     return `Dengan konsisten nabung <b>Rp ${this.formatRupiah(this.target.plan)} per ${label}</b>, selesai dalam <b>±${daysLeft} hari</b>.`;
@@ -377,6 +344,87 @@
                     setTimeout(() => { this.isLoading = false; setTimeout(() => { this.updateChart(); }, 500); }, 2500);
                     this.$watch('transactions', () => this.updateChart());
                 },
+                
+                // --- FIX: GENERATE PDF LOGIC (Status + Empty Fix) ---
+                generateCurrentPDF() { 
+                    // Gunakan "Masih Progres" untuk riwayat aktif
+                    this.printPDF(this.transactions, this.target ? this.target.name : 'Target Aktif', 'Masih Progres'); 
+                },
+                generateArchivePDF(arch) { 
+                    // Gunakan "Sudah Selesai" untuk arsip
+                    this.printPDF(arch.transactions, arch.name, 'Sudah Selesai'); 
+                },
+                
+                printPDF(dataRaw, title, status) {
+                    // DEEP COPY untuk menghindari error Proxy/Array kosong di Alpine
+                    const data = JSON.parse(JSON.stringify(dataRaw)); 
+                    const totalIn = data.reduce((acc,t)=>t.type=='in'?acc+t.amount:acc,0);
+                    const totalOut = data.reduce((acc,t)=>t.type=='out'?acc+t.amount:acc,0);
+                    const statusColor = status === 'Sudah Selesai' ? 'green' : '#eab308'; // Hijau atau Kuning
+
+                    // Jika data kosong, beri pesan
+                    let tableContent = '';
+                    if (data.length === 0) {
+                        tableContent = `<tr><td colspan="4" style="padding:20px; text-align:center; color:#888;">Belum ada transaksi tercatat.</td></tr>`;
+                    } else {
+                        tableContent = data.map(t => `
+                            <tr style="border-bottom:1px solid #eee;">
+                                <td style="padding:8px;">${new Date(t.date).toLocaleDateString('id-ID')}</td>
+                                <td style="padding:8px;">${t.desc}</td>
+                                <td style="padding:8px; font-weight:bold; color:${t.type=='in'?'green':'red'};">${t.type=='in'?'MASUK':'KELUAR'}</td>
+                                <td style="padding:8px; text-align:right;">Rp ${this.formatRupiah(t.amount)}</td>
+                            </tr>
+                        `).join('');
+                    }
+
+                    let html = `
+                    <div style="font-family:sans-serif; padding:20px; color:#333; width:100%;">
+                        <h1 style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:5px;">Laporan: ${title}</h1>
+                        
+                        <div style="text-align:center; margin-bottom:20px;">
+                            <p style="margin:0; color:#666;">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+                            <div style="margin-top:10px; padding:5px 15px; border:2px solid ${statusColor}; color:${statusColor}; display:inline-block; font-weight:bold; border-radius:5px; text-transform:uppercase;">
+                                STATUS: ${status}
+                            </div>
+                        </div>
+
+                        <table style="width:100%; margin:20px 0; border-collapse:collapse; text-align:center;">
+                            <tr style="background:#f3f4f6;">
+                                <td style="padding:10px; border:1px solid #ddd;">Total Masuk<br><b style="color:green; font-size:16px;">Rp ${this.formatRupiah(totalIn)}</b></td>
+                                <td style="padding:10px; border:1px solid #ddd;">Total Keluar<br><b style="color:red; font-size:16px;">Rp ${this.formatRupiah(totalOut)}</b></td>
+                                <td style="padding:10px; border:1px solid #ddd;">Saldo Akhir<br><b style="color:blue; font-size:16px;">Rp ${this.formatRupiah(totalIn - totalOut)}</b></td>
+                            </tr>
+                        </table>
+
+                        <h3 style="margin-top:20px; font-size:14px;">Rincian Transaksi:</h3>
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid #eee;">
+                            <thead>
+                                <tr style="background:#333; color:#fff;">
+                                    <th style="padding:8px; text-align:left;">Tanggal</th>
+                                    <th style="padding:8px; text-align:left;">Ket</th>
+                                    <th style="padding:8px; text-align:left;">Tipe</th>
+                                    <th style="text-align:right; padding:8px;">Nominal</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableContent}</tbody>
+                        </table>
+                        
+                        <div style="margin-top:30px; text-align:center; font-size:10px; color:#aaa;">
+                            Generated by Dompet Masa Depan Pro
+                        </div>
+                    </div>`;
+
+                    // Generate PDF dengan Opsi Hemat Resource
+                    html2pdf().from(html).set({ 
+                        margin: 10, 
+                        filename: `Laporan-${title}.pdf`, 
+                        html2canvas: { scale: 2, useCORS: true }, 
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        enableLinks: false // Optimasi performa
+                    }).save();
+                },
+
+                // --- DATA HANDLING ---
                 saveUser() { if(!this.tempName) this.tempName = 'Bos'; this.userName = this.tempName; localStorage.setItem('dompetUser', this.userName); Swal.fire({icon:'success', title:'Halo, '+this.userName, background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); },
                 changeName() { Swal.fire({title:'Ganti Nama', input:'text', inputValue:this.userName, background:'#1e293b', color:'#fff', confirmButtonText:'Simpan'}).then(r => { if(r.isConfirmed && r.value) { this.userName = r.value; localStorage.setItem('dompetUser', this.userName); } }); },
                 formatInput(e) { e.target.value = this.formatRupiah(e.target.value.replace(/[^0-9]/g, '')); },
@@ -384,12 +432,7 @@
                 unformatRupiah(n) { return parseInt(n.replace(/[^0-9]/g, '')) || 0; },
                 formatDateFull(d) { return new Date(d).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) + ' WIB'; },
                 formatDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}); },
-
-                handleImageUpload(event) {
-                    const file = event.target.files[0]; if (!file) return;
-                    if (file.size > 500 * 1024) { Swal.fire({icon: 'error', title: 'File Terlalu Besar!', text: 'Maksimal ukuran gambar 500KB.', background: '#1e293b', color: '#fff'}); event.target.value = ''; return; }
-                    const reader = new FileReader(); reader.onload = (e) => { this.newTargetImage = e.target.result; }; reader.readAsDataURL(file);
-                },
+                handleImageUpload(event) { const file = event.target.files[0]; if (!file) return; if (file.size > 500 * 1024) { Swal.fire({icon: 'error', title: 'File Terlalu Besar!', text: 'Maksimal 500KB.', background: '#1e293b', color: '#fff'}); event.target.value = ''; return; } const reader = new FileReader(); reader.onload = (e) => { this.newTargetImage = e.target.result; }; reader.readAsDataURL(file); },
 
                 saveTarget() {
                     if(!this.newTargetName || !this.newTargetAmount) return;
@@ -400,28 +443,22 @@
                     this.target = { name: this.newTargetName, amount: this.unformatRupiah(this.newTargetAmount), plan: this.unformatRupiah(this.newTargetPlan), freq: this.newTargetFreq, image: this.newTargetImage, dateCreated: new Date() };
                     this.transactions = []; localStorage.setItem('dompetTarget', JSON.stringify(this.target)); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions));
                     this.newTargetName = ''; this.newTargetAmount = ''; this.newTargetPlan = ''; this.newTargetImage = ''; const fileInput = document.querySelector('input[type="file"]'); if(fileInput) fileInput.value = '';
-                    Swal.fire({icon:'success', title:'Target Baru Dimulai!', background:'#1e293b', color:'#fff'}); setTimeout(() => this.updateChart(), 100);
+                    Swal.fire({icon:'success', title:'Target Baru!', background:'#1e293b', color:'#fff'}); setTimeout(() => this.updateChart(), 100);
                 },
 
                 saveTransaction() {
                     const amount = this.unformatRupiah(this.trxAmount); if(amount <= 0 || !this.trxDesc) return;
                     if(this.trxType === 'out') {
                         if(amount > this.totalSaved) return Swal.fire({icon:'error', title:'Saldo Kurang!', background:'#1e293b', color:'#fff'});
-                        return Swal.fire({ title: '🚨 POLISI TABUNGAN!', html: `<p class="mb-2">Yakin mau ambil uang tabungan?</p><p class="text-red-400 font-bold">Ingat tujuan awalmu!</p>`, icon: 'warning', background: '#1e293b', color: '#fff', showCancelButton: true, cancelButtonText: 'Gak Jadi', confirmButtonText: 'Tunggu (5)', confirmButtonColor: '#ef4444', didOpen: () => { Swal.showLoading(); const b = Swal.getConfirmButton(); b.setAttribute('disabled',''); let t=5; const i=setInterval(()=>{ t--; b.innerText=`Yakin? (${t})`; if(t<=0){ clearInterval(i); Swal.hideLoading(); b.removeAttribute('disabled'); b.innerText='Gas Tarik'; } },1000); } }).then(r => { if(r.isConfirmed) this.commitTransaction(amount); });
+                        return Swal.fire({ title: '🚨 POLISI TABUNGAN!', html: `<p class="mb-2">Yakin ambil tabungan?</p>`, icon: 'warning', background: '#1e293b', color: '#fff', showCancelButton: true, confirmButtonText: 'Tunggu (5)', confirmButtonColor: '#ef4444', didOpen: () => { Swal.showLoading(); const b = Swal.getConfirmButton(); b.setAttribute('disabled',''); let t=5; const i=setInterval(()=>{ t--; b.innerText=`Yakin? (${t})`; if(t<=0){ clearInterval(i); Swal.hideLoading(); b.removeAttribute('disabled'); b.innerText='Gas Tarik'; } },1000); } }).then(r => { if(r.isConfirmed) this.commitTransaction(amount); });
                     }
                     this.commitTransaction(amount);
-                    Swal.fire({icon:'success', title:'Tabungan Bertambah!', background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); confetti({particleCount:100, spread:70, origin:{y:0.6}});
+                    Swal.fire({icon:'success', title:'Masuk!', background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); confetti({particleCount:100, spread:70, origin:{y:0.6}});
                 },
                 commitTransaction(amt) { this.transactions.unshift({ id: Date.now(), type: this.trxType, amount: amt, desc: this.trxDesc, date: new Date() }); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); this.trxAmount = ''; this.trxDesc = ''; },
-                deleteTrx(id) { Swal.fire({title:'Hapus Transaksi?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = this.transactions.filter(t => t.id !== id); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); } }); },
-                confirmClearAll() { Swal.fire({title:'Reset Semua?', text:'Data hilang permanen!', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = []; localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); Swal.fire({icon:'success', title:'Bersih!', background:'#1e293b', color:'#fff'}); } }); },
-                generateCurrentPDF() { this.printPDF(this.transactions, this.target ? this.target.name : 'Target Aktif'); },
-                generateArchivePDF(arch) { this.printPDF(arch.transactions, arch.name); },
-                printPDF(data, title) {
-                    const totalIn = data.reduce((acc,t)=>t.type=='in'?acc+t.amount:acc,0); const totalOut = data.reduce((acc,t)=>t.type=='out'?acc+t.amount:acc,0);
-                    let html = `<div style="font-family:sans-serif; padding:20px; color:#333;"><h1 style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px;">Laporan: ${title}</h1><p style="text-align:center; color:#666;">Dicetak: ${new Date().toLocaleString('id-ID')}</p><table style="width:100%; margin:20px 0; border-collapse:collapse; text-align:center;"><tr style="background:#eee;"><td style="padding:10px; border:1px solid #ccc;">Total Masuk<br><b style="color:green; font-size:18px;">Rp ${this.formatRupiah(totalIn)}</b></td><td style="padding:10px; border:1px solid #ccc;">Total Keluar<br><b style="color:red; font-size:18px;">Rp ${this.formatRupiah(totalOut)}</b></td><td style="padding:10px; border:1px solid #ccc;">Saldo<br><b style="color:blue; font-size:18px;">Rp ${this.formatRupiah(totalIn - totalOut)}</b></td></tr></table><table style="width:100%; border-collapse:collapse; font-size:12px;"><thead><tr style="background:#333; color:#fff;"><th style="padding:8px;">Tanggal</th><th>Ket</th><th>Tipe</th><th style="text-align:right; padding:8px;">Nominal</th></tr></thead><tbody>${data.map(t => `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${new Date(t.date).toLocaleDateString('id-ID')}</td><td style="padding:8px;">${t.desc}</td><td style="padding:8px; font-weight:bold; color:${t.type=='in'?'green':'red'};">${t.type=='in'?'MASUK':'KELUAR'}</td><td style="padding:8px; text-align:right;">Rp ${this.formatRupiah(t.amount)}</td></tr>`).join('')}</tbody></table></div>`;
-                    html2pdf().from(html).set({ margin: 10, filename: `Laporan-${title}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
-                },
+                deleteTrx(id) { Swal.fire({title:'Hapus?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = this.transactions.filter(t => t.id !== id); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); } }); },
+                confirmClearAll() { Swal.fire({title:'Reset?', text:'Data hilang!', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = []; localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); Swal.fire({icon:'success', title:'Bersih!', background:'#1e293b', color:'#fff'}); } }); },
+                
                 updateChart() {
                     const ctx = document.getElementById('savingsChart'); if(!ctx) return;
                     const sorted = [...this.transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -429,17 +466,59 @@
                     let running = 0; const data = sorted.map(t => { if(t.type=='in') running+=t.amount; else running-=t.amount; return running; });
                     if(window.myChart) { window.myChart.destroy(); }
                     const grad = ctx.getContext('2d').createLinearGradient(0,0,0,200); grad.addColorStop(0,'rgba(99,102,241,0.2)'); grad.addColorStop(1,'rgba(99,102,241,0)');
-                    window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, borderColor: '#818cf8', backgroundColor: grad, borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#4f46e5' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
+                    window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, borderColor: '#818cf8', backgroundColor: grad, borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#4f46e5' }] }, options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000 }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
                 },
-                openIdCard() { this.showIdCard=true; setTimeout(()=>{initPhysicsSystem(); setupDragEvents(); VanillaTilt.init(document.querySelector('.tilt-card'),{max:10,speed:400,glare:true,'max-glare':0.2})},50); },
-                closeIdCard() { this.showIdCard=false; cancelAnimationFrame(physicsLoop); }
+
+                // --- OPTIMIZED PHYSICS (Hanya jalan saat ID Card dibuka) ---
+                openIdCard() { 
+                    this.showIdCard=true; 
+                    setTimeout(()=>{
+                        initPhysicsSystem(); 
+                        setupDragEvents(); 
+                        VanillaTilt.init(document.querySelector('.tilt-card'),{max:10,speed:400,glare:true,'max-glare':0.2});
+                    },50); 
+                },
+                closeIdCard() { 
+                    this.showIdCard=false; 
+                    cancelAnimationFrame(physicsLoop); // MATIKAN LOOP ANIMASI (HEMAT BATERAI)
+                }
             }
         }
         function initTime() { const update = () => { const now = new Date(); document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID').replace(/\./g, ':') + ' WIB'; document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }; update(); setInterval(update, 1000); }
+        
+        // --- PHYSICS SYSTEM (Optimized) ---
         let physicsLoop, isDragging = false, currentPos = {x:0, y:0}, targetPos = {x:0, y:0}, velocity = {x:0, y:0}, dragOffset = {x:0, y:0};
         const cardWidth = 320, cardHeight = 480;
-        function initPhysicsSystem() { const el = document.getElementById('id-card-container'); if(!el) return; currentPos = {x:window.innerWidth/2, y:window.innerHeight/2}; targetPos = {...currentPos}; velocity={x:0,y:0}; if(physicsLoop) cancelAnimationFrame(physicsLoop); animatePhysics(); }
-        function animatePhysics() { const card = document.getElementById('id-card-container'); const l1 = document.getElementById('lanyard-line'); const l2 = document.getElementById('lanyard-line-shadow'); if(!card) return; const spring=0.08, friction=0.82; if(!isDragging) { targetPos.x = window.innerWidth/2; targetPos.y = window.innerHeight/2; } velocity.x += (targetPos.x - currentPos.x)*spring; velocity.y += (targetPos.y - currentPos.y)*spring; velocity.x *= friction; velocity.y *= friction; currentPos.x += velocity.x; currentPos.y += velocity.y; const renderX = currentPos.x - (cardWidth / 2); const renderY = currentPos.y - (cardHeight / 2); const rotateDeg = velocity.x * 0.4; card.style.transform = `translate(${renderX}px, ${renderY}px) rotate(${rotateDeg}deg)`; [l1, l2].forEach(l => { l.setAttribute('x1', window.innerWidth/2); l.setAttribute('y1', -20); l.setAttribute('x2', currentPos.x); l.setAttribute('y2', currentPos.y - cardHeight/2 + 10); }); physicsLoop = requestAnimationFrame(animatePhysics); }
+        function initPhysicsSystem() { 
+            const el = document.getElementById('id-card-container'); if(!el) return; 
+            currentPos = {x:window.innerWidth/2, y:window.innerHeight/2}; targetPos = {...currentPos}; velocity={x:0,y:0}; 
+            if(physicsLoop) cancelAnimationFrame(physicsLoop); 
+            animatePhysics(); 
+        }
+        function animatePhysics() { 
+            const card = document.getElementById('id-card-container'); if(!card) return; // Stop if element missing
+            const l1 = document.getElementById('lanyard-line'); const l2 = document.getElementById('lanyard-line-shadow'); 
+            const spring=0.08, friction=0.82; 
+            if(!isDragging) { targetPos.x = window.innerWidth/2; targetPos.y = window.innerHeight/2; } 
+            velocity.x += (targetPos.x - currentPos.x)*spring; velocity.y += (targetPos.y - currentPos.y)*spring; 
+            velocity.x *= friction; velocity.y *= friction; 
+            currentPos.x += velocity.x; currentPos.y += velocity.y; 
+            
+            // Apply Transform
+            const renderX = currentPos.x - (cardWidth / 2); 
+            const renderY = currentPos.y - (cardHeight / 2); 
+            const rotateDeg = velocity.x * 0.4; 
+            card.style.transform = `translate(${renderX}px, ${renderY}px) rotate(${rotateDeg}deg)`; 
+            
+            // Draw SVG Lines only if needed
+            if(l1 && l2) {
+                [l1, l2].forEach(l => { 
+                    l.setAttribute('x1', window.innerWidth/2); l.setAttribute('y1', -20); 
+                    l.setAttribute('x2', currentPos.x); l.setAttribute('y2', currentPos.y - cardHeight/2 + 10); 
+                }); 
+            }
+            physicsLoop = requestAnimationFrame(animatePhysics); 
+        }
         function setupDragEvents() { const card = document.getElementById('id-card-container'); const start = (e) => { isDragging=true; const p = e.touches ? e.touches[0] : e; dragOffset.x = p.clientX - currentPos.x; dragOffset.y = p.clientY - currentPos.y; card.style.cursor='grabbing'; }; const move = (e) => { if(!isDragging) return; const p = e.touches ? e.touches[0] : e; targetPos.x = p.clientX - dragOffset.x; targetPos.y = p.clientY - dragOffset.y; }; const end = () => { isDragging=false; if(card) card.style.cursor='grab'; }; if(card) { card.addEventListener('mousedown', start); card.addEventListener('touchstart', start); window.addEventListener('mousemove', move); window.addEventListener('touchmove', move); window.addEventListener('mouseup', end); window.addEventListener('touchend', end); } }
     </script>
 </body>
