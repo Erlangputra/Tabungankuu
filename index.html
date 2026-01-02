@@ -17,21 +17,54 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
+        /* BASE STYLES */
         body { font-family: 'Outfit', sans-serif; overflow-x: hidden; background-color: #0f172a; -webkit-tap-highlight-color: transparent; }
+        [x-cloak] { display: none !important; }
         
         /* Glassmorphism */
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
         .glass-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.18); }
         
-        /* Text Gradient */
         .h1-gradient { background: linear-gradient(to right, #818cf8, #e879f9, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         
-        /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; } 
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+
+        /* --- NEW ANIMATION: MONEY INTO WALLET --- */
+        @keyframes money-drop {
+            0% { transform: translateX(-50%) translateY(-35px) scale(0.8) rotate(-10deg); opacity: 0; }
+            20% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1) rotate(0deg); }
+            80% { opacity: 1; transform: translateX(-50%) translateY(5px) scale(0.6) rotate(10deg); }
+            100% { transform: translateX(-50%) translateY(15px) scale(0.2); opacity: 0; }
+        }
+        @keyframes wallet-bounce {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.6)); }
+        }
         
-        [x-cloak] { display: none !important; }
+        .animate-money {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            animation: money-drop 1.2s infinite ease-in-out;
+            z-index: 5;
+        }
+        .animate-wallet {
+            position: relative;
+            z-index: 10;
+            animation: wallet-bounce 1.2s infinite ease-in-out;
+        }
+        
+        .loader-bar {
+            width: 100%; height: 4px; background: #1e293b; border-radius: 99px; overflow: hidden; position: relative;
+        }
+        .loader-bar::after {
+            content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+            background: linear-gradient(90deg, #6366f1, #10b981, #06b6d4);
+            animation: loading-progress 2s ease-in-out forwards;
+        }
+        @keyframes loading-progress { 0% { width: 0%; } 100% { width: 100%; } }
 
         /* SKINS ID CARD */
         .skin-basic { background: #1e293b; border: 2px solid rgba(255,255,255,0.1); }
@@ -56,16 +89,7 @@
         }
 
         /* File Input Custom */
-        input[type="file"]::file-selector-button {
-            margin-right: 10px;
-            background: #4f46e5;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
+        input[type="file"]::file-selector-button { margin-right: 10px; background: #4f46e5; border: none; border-radius: 5px; color: white; padding: 5px 10px; cursor: pointer; font-size: 12px; }
         input[type="file"]::file-selector-button:hover { background: #4338ca; }
     </style>
 </head>
@@ -73,7 +97,27 @@
 
     <div x-data="appData()" x-init="initApp()" class="min-h-screen">
 
-        <div x-show="!userName" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md px-4">
+        <div x-show="isLoading" x-transition.opacity.duration.1000ms class="fixed inset-0 z-[999] bg-[#0f172a] flex flex-col items-center justify-center p-4">
+            
+            <div class="relative w-32 h-32 mb-8 flex items-center justify-center">
+                <i class="fas fa-money-bill-wave text-emerald-400 text-4xl animate-money"></i>
+                
+                <div class="relative z-10 bg-[#0f172a] rounded-full p-2"> <i class="fas fa-wallet text-6xl text-indigo-500 animate-wallet"></i>
+                </div>
+                
+                <div class="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse z-0"></div>
+            </div>
+
+            <h1 class="text-3xl font-black h1-gradient mb-2 tracking-tight">Dompet Masa Depan</h1>
+            <p class="text-gray-400 text-sm mb-8 font-mono tracking-widest flex items-center gap-2">
+                <i class="fas fa-sync fa-spin text-xs"></i> MENYIAPKAN SALDO...
+            </p>
+            
+            <div class="w-48 loader-bar shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+            <p class="absolute bottom-10 text-xs text-gray-600">Powered by @er14ng45</p>
+        </div>
+
+        <div x-show="!isLoading && !userName" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md px-4">
             <div class="bg-gray-800 p-8 rounded-3xl text-center max-w-md w-full border border-gray-700">
                 <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                     <i class="fas fa-wallet text-3xl"></i>
@@ -139,7 +183,7 @@
                     </div>
                     <div class="mt-auto mb-6 w-full px-6 opacity-60 no-pointer"><div class="h-8 bg-white w-full rounded-sm" style="background-image: repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px);"></div></div>
                 </div>
-                <p class="text-center text-white/50 mt-4 text-xs no-pointer animate-pulse">Tarik aku, nanti mental!</p>
+                <p class="text-center text-white/50 mt-4 text-xs no-pointer animate-pulse">Tarik aku!</p>
             </div></div>
         </div>
 
@@ -257,7 +301,7 @@
                             <div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1">Harga (Rp)</label><div class="relative"><span class="absolute left-4 top-2.5 text-gray-500 text-xs font-bold">Rp</span><input type="text" x-model="newTargetAmount" @input="formatInput($event)" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none font-mono focus:border-purple-500 text-white"></div></div>
                             
                             <div>
-                                <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1 flex justify-between"><span>Foto Barang</span> <span class="text-purple-400 text-[9px] italic">JPG, PNG, GIF (Max 500KB)</span></label>
+                                <label class="text-[10px] uppercase text-gray-500 font-bold mb-1 ml-1 flex justify-between"><span>Foto Barang</span> <span class="text-purple-400 text-[9px] italic">JPG, PNG (Max 500KB)</span></label>
                                 <input type="file" @change="handleImageUpload($event)" accept="image/*" class="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-2 py-2 text-xs text-gray-300">
                                 
                                 <template x-if="newTargetImage">
@@ -298,6 +342,7 @@
     <script>
         function appData() {
             return {
+                isLoading: true, // STATE UNTUK LOADING SCREEN
                 userName: localStorage.getItem('dompetUser'),
                 tempName: '',
                 target: JSON.parse(localStorage.getItem('dompetTarget')) || null,
@@ -316,7 +361,6 @@
                 get rankCode() { const p = parseFloat(this.percentage); if(p >= 100) return 'MAX'; if(p >= 75) return 'ELT'; if(p >= 50) return 'PRO'; if(p >= 25) return 'ADV'; if(p >= 10) return 'INT'; return 'NOV'; },
                 get badgeColor() { const p = parseFloat(this.percentage); if(p >= 100) return 'yellow'; if(p >= 75) return 'pink'; if(p >= 50) return 'purple'; if(p >= 25) return 'indigo'; if(p >= 10) return 'blue'; return 'gray'; },
                 get levelIcon() { const p = parseFloat(this.percentage); if(p >= 100) return '👑'; if(p >= 75) return '🚀'; if(p >= 50) return '💎'; return '🌱'; },
-                
                 get predictionMsg() {
                     if(!this.target) return 'Silakan buat target baru.';
                     if(this.totalSaved >= this.target.amount) return '🎉 SELAMAT! Target tercapai!';
@@ -332,10 +376,17 @@
 
                 initApp() {
                     if(!localStorage.getItem('dompetJoinDate')) localStorage.setItem('dompetJoinDate', this.joinDate);
-                    // FIX: Delay chart rendering to ensure DOM is ready
+                    
+                    // SIMULASI LOADING TIME (2 Detik)
                     setTimeout(() => {
-                        this.updateChart();
-                    }, 500);
+                        this.isLoading = false; // Matikan loading screen
+                        
+                        // Render grafik setelah loading selesai
+                        setTimeout(() => {
+                            this.updateChart();
+                        }, 500);
+                    }, 2500);
+
                     this.$watch('transactions', () => this.updateChart());
                 },
                 saveUser() { if(!this.tempName) this.tempName = 'Bos'; this.userName = this.tempName; localStorage.setItem('dompetUser', this.userName); Swal.fire({icon:'success', title:'Halo, '+this.userName, background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); },
@@ -350,18 +401,13 @@
                 handleImageUpload(event) {
                     const file = event.target.files[0];
                     if (!file) return;
-                    
-                    // VALIDASI UKURAN: MAX 500KB (Agar localStorage tidak penuh)
                     if (file.size > 500 * 1024) {
                         Swal.fire({icon: 'error', title: 'File Terlalu Besar!', text: 'Maksimal ukuran gambar 500KB.', background: '#1e293b', color: '#fff'});
-                        event.target.value = ''; // Reset input
+                        event.target.value = '';
                         return;
                     }
-
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.newTargetImage = e.target.result; // Convert to Base64
-                    };
+                    reader.onload = (e) => { this.newTargetImage = e.target.result; };
                     reader.readAsDataURL(file);
                 },
 
@@ -381,19 +427,17 @@
                         amount: this.unformatRupiah(this.newTargetAmount),
                         plan: this.unformatRupiah(this.newTargetPlan),
                         freq: this.newTargetFreq,
-                        image: this.newTargetImage, // Stores Base64 string
+                        image: this.newTargetImage,
                         dateCreated: new Date()
                     };
                     this.transactions = [];
                     localStorage.setItem('dompetTarget', JSON.stringify(this.target));
                     localStorage.setItem('dompetTrx', JSON.stringify(this.transactions));
                     this.newTargetName = ''; this.newTargetAmount = ''; this.newTargetPlan = ''; this.newTargetImage = '';
-                    // Reset input file manually
                     const fileInput = document.querySelector('input[type="file"]');
                     if(fileInput) fileInput.value = '';
-                    
                     Swal.fire({icon:'success', title:'Target Baru Dimulai!', background:'#1e293b', color:'#fff'});
-                    setTimeout(() => this.updateChart(), 100); // Re-init chart for new target
+                    setTimeout(() => this.updateChart(), 100);
                 },
 
                 saveTransaction() {
@@ -444,9 +488,7 @@
                     let running = 0;
                     const data = sorted.map(t => { if(t.type=='in') running+=t.amount; else running-=t.amount; return running; });
                     
-                    if(window.myChart) {
-                        window.myChart.destroy(); // Fix: Destroy old instance
-                    }
+                    if(window.myChart) { window.myChart.destroy(); }
                     
                     const grad = ctx.getContext('2d').createLinearGradient(0,0,0,200); grad.addColorStop(0,'rgba(99,102,241,0.2)'); grad.addColorStop(1,'rgba(99,102,241,0)');
                     window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, borderColor: '#818cf8', backgroundColor: grad, borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#4f46e5' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
