@@ -31,7 +31,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
 
-        /* --- NEW ANIMATION: MONEY INTO WALLET --- */
+        /* --- LOADING SCREEN ANIMATION (MONEY DROP) --- */
         @keyframes money-drop {
             0% { transform: translateX(-50%) translateY(-35px) scale(0.8) rotate(-10deg); opacity: 0; }
             20% { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1) rotate(0deg); }
@@ -42,29 +42,28 @@
             0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3)); }
             50% { transform: scale(1.1); filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.6)); }
         }
-        
-        .animate-money {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            animation: money-drop 1.2s infinite ease-in-out;
-            z-index: 5;
-        }
-        .animate-wallet {
-            position: relative;
-            z-index: 10;
-            animation: wallet-bounce 1.2s infinite ease-in-out;
-        }
-        
-        .loader-bar {
-            width: 100%; height: 4px; background: #1e293b; border-radius: 99px; overflow: hidden; position: relative;
-        }
-        .loader-bar::after {
-            content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 0%;
-            background: linear-gradient(90deg, #6366f1, #10b981, #06b6d4);
-            animation: loading-progress 2s ease-in-out forwards;
-        }
+        .animate-money { position: absolute; top: 0; left: 50%; animation: money-drop 1.2s infinite ease-in-out; z-index: 5; }
+        .animate-wallet { position: relative; z-index: 10; animation: wallet-bounce 1.2s infinite ease-in-out; }
+        .loader-bar { width: 100%; height: 4px; background: #1e293b; border-radius: 99px; overflow: hidden; position: relative; }
+        .loader-bar::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #10b981, #06b6d4); animation: loading-progress 2s ease-in-out forwards; }
         @keyframes loading-progress { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* --- PLANT GROWTH ANIMATION (NEW) --- */
+        @keyframes plant-grow {
+            0% { transform: scale(0) translateY(10px); opacity: 0; }
+            60% { transform: scale(1.2) translateY(-2px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes plant-sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .growing-plant {
+            display: inline-block;
+            animation: plant-grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+                       plant-sway 3s ease-in-out infinite 0.8s; /* Sway starts after grow */
+            transform-origin: bottom center;
+        }
 
         /* SKINS ID CARD */
         .skin-basic { background: #1e293b; border: 2px solid rgba(255,255,255,0.1); }
@@ -83,12 +82,7 @@
         .no-pointer { pointer-events: none; }
         #lanyard-svg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 140; }
         
-        /* Mobile Specific */
-        @media (max-width: 640px) {
-            #id-card-container { width: 300px; height: 450px; } 
-        }
-
-        /* File Input Custom */
+        @media (max-width: 640px) { #id-card-container { width: 300px; height: 450px; } }
         input[type="file"]::file-selector-button { margin-right: 10px; background: #4f46e5; border: none; border-radius: 5px; color: white; padding: 5px 10px; cursor: pointer; font-size: 12px; }
         input[type="file"]::file-selector-button:hover { background: #4338ca; }
     </style>
@@ -98,21 +92,15 @@
     <div x-data="appData()" x-init="initApp()" class="min-h-screen">
 
         <div x-show="isLoading" x-transition.opacity.duration.1000ms class="fixed inset-0 z-[999] bg-[#0f172a] flex flex-col items-center justify-center p-4">
-            
             <div class="relative w-32 h-32 mb-8 flex items-center justify-center">
                 <i class="fas fa-money-bill-wave text-emerald-400 text-4xl animate-money"></i>
-                
-                <div class="relative z-10 bg-[#0f172a] rounded-full p-2"> <i class="fas fa-wallet text-6xl text-indigo-500 animate-wallet"></i>
+                <div class="relative z-10 bg-[#0f172a] rounded-full p-2">
+                    <i class="fas fa-wallet text-6xl text-indigo-500 animate-wallet"></i>
                 </div>
-                
                 <div class="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse z-0"></div>
             </div>
-
             <h1 class="text-3xl font-black h1-gradient mb-2 tracking-tight">Dompet Masa Depan</h1>
-            <p class="text-gray-400 text-sm mb-8 font-mono tracking-widest flex items-center gap-2">
-                <i class="fas fa-sync fa-spin text-xs"></i> MENYIAPKAN SALDO...
-            </p>
-            
+            <p class="text-gray-400 text-sm mb-8 font-mono tracking-widest flex items-center gap-2"><i class="fas fa-sync fa-spin text-xs"></i> MENYIAPKAN SALDO...</p>
             <div class="w-48 loader-bar shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
             <p class="absolute bottom-10 text-xs text-gray-600">Powered by @er14ng45</p>
         </div>
@@ -138,17 +126,14 @@
                 <div class="space-y-4 overflow-y-auto max-h-[60vh] custom-scrollbar pr-2">
                     <template x-for="(arch, index) in archives" :key="index">
                         <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-700/50 relative overflow-hidden group">
-                             <div x-show="arch.image" class="absolute inset-0 z-0 opacity-20">
+                            <div x-show="arch.image" class="absolute inset-0 z-0 opacity-20">
                                 <img :src="arch.image" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition duration-500">
                                 <div class="absolute inset-0 bg-gradient-to-r from-gray-900 to-transparent"></div>
                             </div>
-
                             <div class="relative z-10">
                                 <div class="flex justify-between items-center mb-2">
                                     <h4 class="font-bold text-lg text-white" x-text="arch.name"></h4>
-                                    <button @click="generateArchivePDF(arch)" class="text-xs bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-2">
-                                        <i class="fas fa-file-pdf"></i> Unduh
-                                    </button>
+                                    <button @click="generateArchivePDF(arch)" class="text-xs bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-2"><i class="fas fa-file-pdf"></i> Unduh</button>
                                 </div>
                                 <div class="flex justify-between text-sm text-gray-400 mb-2">
                                     <span x-text="formatDate(arch.dateEnded)"></span>
@@ -205,8 +190,13 @@
                 
                 <template x-if="target">
                     <div :class="`glass px-4 md:px-6 py-3 rounded-2xl flex items-center gap-4 border-l-4 border-${badgeColor}-500 w-full md:w-auto justify-between md:justify-end`">
-                        <div class="text-right"><p class="text-[10px] uppercase text-gray-400">Level Saat Ini</p><p :class="`text-lg md:text-xl font-bold text-${badgeColor}-400`" x-text="currentLevel"></p></div>
-                        <div class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-2xl shadow-lg border border-gray-700" x-text="levelIcon"></div>
+                        <div class="text-right">
+                            <p class="text-[10px] uppercase text-gray-400">Status Tanaman</p>
+                            <p :class="`text-lg md:text-xl font-bold text-${badgeColor}-400`" x-text="currentLevel"></p>
+                        </div>
+                        <div class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-3xl shadow-lg border border-gray-700 relative overflow-hidden">
+                            <span x-text="levelIcon" class="growing-plant"></span>
+                        </div>
                     </div>
                 </template>
             </header>
@@ -342,25 +332,33 @@
     <script>
         function appData() {
             return {
-                isLoading: true, // STATE UNTUK LOADING SCREEN
-                userName: localStorage.getItem('dompetUser'),
-                tempName: '',
+                isLoading: true, userName: localStorage.getItem('dompetUser'), tempName: '',
                 target: JSON.parse(localStorage.getItem('dompetTarget')) || null,
                 transactions: JSON.parse(localStorage.getItem('dompetTrx')) || [],
                 archives: JSON.parse(localStorage.getItem('dompetArchives')) || [],
                 joinDate: localStorage.getItem('dompetJoinDate') || new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}),
-                
-                showIdCard: false, showArchive: false,
-                trxType: 'in', trxAmount: '', trxDesc: '',
+                showIdCard: false, showArchive: false, trxType: 'in', trxAmount: '', trxDesc: '',
                 newTargetName: '', newTargetAmount: '', newTargetPlan: '', newTargetFreq: 'daily', newTargetImage: '',
                 
                 get totalSaved() { return this.transactions.reduce((acc, t) => t.type === 'in' ? acc + t.amount : acc - t.amount, 0); },
                 get percentage() { if(!this.target || this.target.amount <= 0) return 0; return Math.min(100, (this.totalSaved / this.target.amount) * 100).toFixed(1); },
-                get currentLevel() { const p = parseFloat(this.percentage); if(p >= 100) return 'SULTAN'; if(p >= 75) return 'Calon Sultan'; if(p >= 50) return 'Juragan'; if(p >= 25) return 'Pejuang Hemat'; if(p >= 10) return 'Niat Banget'; return 'Pemula'; },
+                get currentLevel() { const p = parseFloat(this.percentage); if(p >= 100) return 'Panen Raya'; if(p >= 75) return 'Mekar Indah'; if(p >= 50) return 'Kuncup Bunga'; if(p >= 25) return 'Tanaman Pot'; if(p >= 10) return 'Tunas Muda'; return 'Benih Baru'; },
+                
+                // EVOLUSI TANAMAN BERDASARKAN PERSENTASE
+                get levelIcon() {
+                    const p = parseFloat(this.percentage);
+                    if(p >= 100) return '🌻'; // Panen/Mekar Sempurna
+                    if(p >= 75) return '🌺';  // Mekar Indah
+                    if(p >= 50) return '🌷';  // Kuncup Bunga
+                    if(p >= 25) return '🪴';  // Tanaman Pot
+                    if(p >= 10) return '🌿';  // Daun Tumbuh
+                    return '🌱';              // Benih
+                },
+
                 get currentSkin() { const p = parseFloat(this.percentage); if(p >= 100) return 'skin-sultan'; if(p >= 75) return 'skin-royal'; if(p >= 50) return 'skin-luxury'; if(p >= 25) return 'skin-carbon'; if(p >= 10) return 'skin-tech'; return 'skin-basic'; },
                 get rankCode() { const p = parseFloat(this.percentage); if(p >= 100) return 'MAX'; if(p >= 75) return 'ELT'; if(p >= 50) return 'PRO'; if(p >= 25) return 'ADV'; if(p >= 10) return 'INT'; return 'NOV'; },
                 get badgeColor() { const p = parseFloat(this.percentage); if(p >= 100) return 'yellow'; if(p >= 75) return 'pink'; if(p >= 50) return 'purple'; if(p >= 25) return 'indigo'; if(p >= 10) return 'blue'; return 'gray'; },
-                get levelIcon() { const p = parseFloat(this.percentage); if(p >= 100) return '👑'; if(p >= 75) return '🚀'; if(p >= 50) return '💎'; return '🌱'; },
+                
                 get predictionMsg() {
                     if(!this.target) return 'Silakan buat target baru.';
                     if(this.totalSaved >= this.target.amount) return '🎉 SELAMAT! Target tercapai!';
@@ -376,17 +374,7 @@
 
                 initApp() {
                     if(!localStorage.getItem('dompetJoinDate')) localStorage.setItem('dompetJoinDate', this.joinDate);
-                    
-                    // SIMULASI LOADING TIME (2 Detik)
-                    setTimeout(() => {
-                        this.isLoading = false; // Matikan loading screen
-                        
-                        // Render grafik setelah loading selesai
-                        setTimeout(() => {
-                            this.updateChart();
-                        }, 500);
-                    }, 2500);
-
+                    setTimeout(() => { this.isLoading = false; setTimeout(() => { this.updateChart(); }, 500); }, 2500);
                     this.$watch('transactions', () => this.updateChart());
                 },
                 saveUser() { if(!this.tempName) this.tempName = 'Bos'; this.userName = this.tempName; localStorage.setItem('dompetUser', this.userName); Swal.fire({icon:'success', title:'Halo, '+this.userName, background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); },
@@ -397,99 +385,49 @@
                 formatDateFull(d) { return new Date(d).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) + ' WIB'; },
                 formatDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}); },
 
-                // HANDLE IMAGE UPLOAD (LOCALSTORAGE)
                 handleImageUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    if (file.size > 500 * 1024) {
-                        Swal.fire({icon: 'error', title: 'File Terlalu Besar!', text: 'Maksimal ukuran gambar 500KB.', background: '#1e293b', color: '#fff'});
-                        event.target.value = '';
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (e) => { this.newTargetImage = e.target.result; };
-                    reader.readAsDataURL(file);
+                    const file = event.target.files[0]; if (!file) return;
+                    if (file.size > 500 * 1024) { Swal.fire({icon: 'error', title: 'File Terlalu Besar!', text: 'Maksimal ukuran gambar 500KB.', background: '#1e293b', color: '#fff'}); event.target.value = ''; return; }
+                    const reader = new FileReader(); reader.onload = (e) => { this.newTargetImage = e.target.result; }; reader.readAsDataURL(file);
                 },
 
                 saveTarget() {
                     if(!this.newTargetName || !this.newTargetAmount) return;
                     if(this.target) {
-                        this.archives.unshift({
-                            name: this.target.name, amount: this.target.amount, dateEnded: new Date(),
-                            status: this.totalSaved >= this.target.amount ? 'success' : 'replaced',
-                            finalBalance: this.totalSaved, image: this.target.image,
-                            transactions: [...this.transactions]
-                        });
+                        this.archives.unshift({ name: this.target.name, amount: this.target.amount, dateEnded: new Date(), status: this.totalSaved >= this.target.amount ? 'success' : 'replaced', finalBalance: this.totalSaved, image: this.target.image, transactions: [...this.transactions] });
                         localStorage.setItem('dompetArchives', JSON.stringify(this.archives));
                     }
-                    this.target = {
-                        name: this.newTargetName,
-                        amount: this.unformatRupiah(this.newTargetAmount),
-                        plan: this.unformatRupiah(this.newTargetPlan),
-                        freq: this.newTargetFreq,
-                        image: this.newTargetImage,
-                        dateCreated: new Date()
-                    };
-                    this.transactions = [];
-                    localStorage.setItem('dompetTarget', JSON.stringify(this.target));
-                    localStorage.setItem('dompetTrx', JSON.stringify(this.transactions));
-                    this.newTargetName = ''; this.newTargetAmount = ''; this.newTargetPlan = ''; this.newTargetImage = '';
-                    const fileInput = document.querySelector('input[type="file"]');
-                    if(fileInput) fileInput.value = '';
-                    Swal.fire({icon:'success', title:'Target Baru Dimulai!', background:'#1e293b', color:'#fff'});
-                    setTimeout(() => this.updateChart(), 100);
+                    this.target = { name: this.newTargetName, amount: this.unformatRupiah(this.newTargetAmount), plan: this.unformatRupiah(this.newTargetPlan), freq: this.newTargetFreq, image: this.newTargetImage, dateCreated: new Date() };
+                    this.transactions = []; localStorage.setItem('dompetTarget', JSON.stringify(this.target)); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions));
+                    this.newTargetName = ''; this.newTargetAmount = ''; this.newTargetPlan = ''; this.newTargetImage = ''; const fileInput = document.querySelector('input[type="file"]'); if(fileInput) fileInput.value = '';
+                    Swal.fire({icon:'success', title:'Target Baru Dimulai!', background:'#1e293b', color:'#fff'}); setTimeout(() => this.updateChart(), 100);
                 },
 
                 saveTransaction() {
-                    const amount = this.unformatRupiah(this.trxAmount);
-                    if(amount <= 0 || !this.trxDesc) return;
+                    const amount = this.unformatRupiah(this.trxAmount); if(amount <= 0 || !this.trxDesc) return;
                     if(this.trxType === 'out') {
                         if(amount > this.totalSaved) return Swal.fire({icon:'error', title:'Saldo Kurang!', background:'#1e293b', color:'#fff'});
-                        return Swal.fire({
-                            title: '🚨 POLISI TABUNGAN!', html: `<p class="mb-2">Yakin mau ambil uang tabungan?</p><p class="text-red-400 font-bold">Ingat tujuan awalmu!</p>`, icon: 'warning', background: '#1e293b', color: '#fff',
-                            showCancelButton: true, cancelButtonText: 'Gak Jadi', confirmButtonText: 'Tunggu (5)', confirmButtonColor: '#ef4444',
-                            didOpen: () => { Swal.showLoading(); const b = Swal.getConfirmButton(); b.setAttribute('disabled',''); let t=5; const i=setInterval(()=>{ t--; b.innerText=`Yakin? (${t})`; if(t<=0){ clearInterval(i); Swal.hideLoading(); b.removeAttribute('disabled'); b.innerText='Gas Tarik'; } },1000); }
-                        }).then(r => { if(r.isConfirmed) this.commitTransaction(amount); });
+                        return Swal.fire({ title: '🚨 POLISI TABUNGAN!', html: `<p class="mb-2">Yakin mau ambil uang tabungan?</p><p class="text-red-400 font-bold">Ingat tujuan awalmu!</p>`, icon: 'warning', background: '#1e293b', color: '#fff', showCancelButton: true, cancelButtonText: 'Gak Jadi', confirmButtonText: 'Tunggu (5)', confirmButtonColor: '#ef4444', didOpen: () => { Swal.showLoading(); const b = Swal.getConfirmButton(); b.setAttribute('disabled',''); let t=5; const i=setInterval(()=>{ t--; b.innerText=`Yakin? (${t})`; if(t<=0){ clearInterval(i); Swal.hideLoading(); b.removeAttribute('disabled'); b.innerText='Gas Tarik'; } },1000); } }).then(r => { if(r.isConfirmed) this.commitTransaction(amount); });
                     }
                     this.commitTransaction(amount);
-                    Swal.fire({icon:'success', title:'Tabungan Bertambah!', background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500});
-                    confetti({particleCount:100, spread:70, origin:{y:0.6}});
+                    Swal.fire({icon:'success', title:'Tabungan Bertambah!', background:'#1e293b', color:'#fff', showConfirmButton:false, timer:1500}); confetti({particleCount:100, spread:70, origin:{y:0.6}});
                 },
-                commitTransaction(amt) {
-                    this.transactions.unshift({ id: Date.now(), type: this.trxType, amount: amt, desc: this.trxDesc, date: new Date() });
-                    localStorage.setItem('dompetTrx', JSON.stringify(this.transactions));
-                    this.trxAmount = ''; this.trxDesc = '';
-                },
-                deleteTrx(id) {
-                    Swal.fire({title:'Hapus Transaksi?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => {
-                        if(r.isConfirmed) { this.transactions = this.transactions.filter(t => t.id !== id); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); }
-                    });
-                },
-                confirmClearAll() {
-                    Swal.fire({title:'Reset Semua?', text:'Data hilang permanen!', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => {
-                        if(r.isConfirmed) { this.transactions = []; localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); Swal.fire({icon:'success', title:'Bersih!', background:'#1e293b', color:'#fff'}); }
-                    });
-                },
+                commitTransaction(amt) { this.transactions.unshift({ id: Date.now(), type: this.trxType, amount: amt, desc: this.trxDesc, date: new Date() }); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); this.trxAmount = ''; this.trxDesc = ''; },
+                deleteTrx(id) { Swal.fire({title:'Hapus Transaksi?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = this.transactions.filter(t => t.id !== id); localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); } }); },
+                confirmClearAll() { Swal.fire({title:'Reset Semua?', text:'Data hilang permanen!', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', background:'#1e293b', color:'#fff'}).then(r => { if(r.isConfirmed) { this.transactions = []; localStorage.setItem('dompetTrx', JSON.stringify(this.transactions)); Swal.fire({icon:'success', title:'Bersih!', background:'#1e293b', color:'#fff'}); } }); },
                 generateCurrentPDF() { this.printPDF(this.transactions, this.target ? this.target.name : 'Target Aktif'); },
                 generateArchivePDF(arch) { this.printPDF(arch.transactions, arch.name); },
                 printPDF(data, title) {
-                    const totalIn = data.reduce((acc,t)=>t.type=='in'?acc+t.amount:acc,0);
-                    const totalOut = data.reduce((acc,t)=>t.type=='out'?acc+t.amount:acc,0);
+                    const totalIn = data.reduce((acc,t)=>t.type=='in'?acc+t.amount:acc,0); const totalOut = data.reduce((acc,t)=>t.type=='out'?acc+t.amount:acc,0);
                     let html = `<div style="font-family:sans-serif; padding:20px; color:#333;"><h1 style="text-align:center; border-bottom:2px solid #333; padding-bottom:10px;">Laporan: ${title}</h1><p style="text-align:center; color:#666;">Dicetak: ${new Date().toLocaleString('id-ID')}</p><table style="width:100%; margin:20px 0; border-collapse:collapse; text-align:center;"><tr style="background:#eee;"><td style="padding:10px; border:1px solid #ccc;">Total Masuk<br><b style="color:green; font-size:18px;">Rp ${this.formatRupiah(totalIn)}</b></td><td style="padding:10px; border:1px solid #ccc;">Total Keluar<br><b style="color:red; font-size:18px;">Rp ${this.formatRupiah(totalOut)}</b></td><td style="padding:10px; border:1px solid #ccc;">Saldo<br><b style="color:blue; font-size:18px;">Rp ${this.formatRupiah(totalIn - totalOut)}</b></td></tr></table><table style="width:100%; border-collapse:collapse; font-size:12px;"><thead><tr style="background:#333; color:#fff;"><th style="padding:8px;">Tanggal</th><th>Ket</th><th>Tipe</th><th style="text-align:right; padding:8px;">Nominal</th></tr></thead><tbody>${data.map(t => `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${new Date(t.date).toLocaleDateString('id-ID')}</td><td style="padding:8px;">${t.desc}</td><td style="padding:8px; font-weight:bold; color:${t.type=='in'?'green':'red'};">${t.type=='in'?'MASUK':'KELUAR'}</td><td style="padding:8px; text-align:right;">Rp ${this.formatRupiah(t.amount)}</td></tr>`).join('')}</tbody></table></div>`;
                     html2pdf().from(html).set({ margin: 10, filename: `Laporan-${title}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
                 },
                 updateChart() {
-                    const ctx = document.getElementById('savingsChart');
-                    // FIX: If canvas doesn't exist yet (hidden), stop function
-                    if(!ctx) return;
-                    
+                    const ctx = document.getElementById('savingsChart'); if(!ctx) return;
                     const sorted = [...this.transactions].sort((a,b) => new Date(a.date) - new Date(b.date));
                     const labels = sorted.map(t => new Date(t.date).toLocaleDateString('id-ID', {day:'numeric', month:'short'}));
-                    let running = 0;
-                    const data = sorted.map(t => { if(t.type=='in') running+=t.amount; else running-=t.amount; return running; });
-                    
+                    let running = 0; const data = sorted.map(t => { if(t.type=='in') running+=t.amount; else running-=t.amount; return running; });
                     if(window.myChart) { window.myChart.destroy(); }
-                    
                     const grad = ctx.getContext('2d').createLinearGradient(0,0,0,200); grad.addColorStop(0,'rgba(99,102,241,0.2)'); grad.addColorStop(1,'rgba(99,102,241,0)');
                     window.myChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, borderColor: '#818cf8', backgroundColor: grad, borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#4f46e5' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
                 },
